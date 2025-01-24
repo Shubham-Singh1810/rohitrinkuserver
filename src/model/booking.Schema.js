@@ -9,8 +9,16 @@ const bookingSchema = mongoose.Schema({
   yourCity: { type: String },
   noOfKundali: { type: Number },
   extraTime:{type:String},
-  bookingDate:{type:String},
-  token:{type:String}
+  bookingDate:[{type:String}],
+  token:{type:String},
+  status: {
+    type: String,
+    enum: ["requested", "scheduled", "confirmed", "token_generated"], // Define the allowed values
+    default: "requested", // Set a default value if needed
+  },
+  scheduledDate:{type:String},
+  scheduledTime:{type:String},
+  tokenNo:{type:Number},
 });
 
 bookingSchema.plugin(timestamps);
