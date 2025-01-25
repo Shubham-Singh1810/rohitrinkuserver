@@ -7,6 +7,7 @@ const { isReadable } = require("stream");
 const multer = require("multer");
 const upload = multer();
 const { addNotification } = require("../utils/addNotificationService");
+const { generateToken } = require("../utils/generateToken");
 const moment = require("moment");
 const Kundali = require("../model/kundali.Schema");
 bookingController.post("/store", upload.none(), async (req, res) => {
@@ -44,49 +45,44 @@ bookingController.post("/store", upload.none(), async (req, res) => {
     });
   }
 });
+
 bookingController.post("/list", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, date } = req.body;
 
     // Validate the status input
-    const allowedStatuses = ["requested", "scheduled", "confirmed", "token_generated"];
+    const allowedStatuses = ["requested", "scheduled", "kundaliAdded", "completed"];
     if (status && !allowedStatuses.includes(status)) {
       return sendResponse(res, 400, "Invalid Status", {
         success: false,
         message: "The provided status is not valid.",
       });
     }
-    // Check if status is "confirmed" and filter by today's date
-    if (status === "confirmed") {
-      const currentDate = moment().format("YYYY-MM-DD"); // Get today's date in YYYY-MM-DD format
-      let bookings = await Booking.find({
-        // status: "confirmed",
-        bookingDate: currentDate, // Match with today's date
-      }).sort({ createdAt: -1 });
-      // Fetch kundali details for each booking
-      const bookingsWithKundali = await Promise.all(
-        bookings.map(async (booking) => {
-          const kundaliDetails = await Kundali.find({ bookingId: booking._id });
-          return {
-            ...booking.toObject(),
-            kundaliDetails, // Add kundali details to the booking object
-          };
-        })
-      );
-      return sendResponse(res, 200, "Success", {
-        success: true,
-        message: "Booking list retrieved successfully",
-        data: bookingsWithKundali,
-      });
-    }
-    // Query based on status (or get all if no status is provided)
-    const filter = status ? { status } : {};
-    let bookings = await Booking.find(filter).sort({ createdAt: -1 });
 
+    // Build the filter object dynamically
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+    if (date) {
+      filter.scheduledDate = date;
+    }
+
+    // Fetch bookings based on the filter
+    const bookings = await Booking.find(filter);
+    const bookingsWithKundali = await Promise.all(
+      bookings.map(async (booking) => {
+        const kundaliDetails = await Kundali.find({ bookingId: booking._id });
+        return {
+          ...booking.toObject(),
+          kundaliDetails, // Add kundali details to the booking object
+        };
+      })
+    );
     sendResponse(res, 200, "Success", {
       success: true,
       message: "Booking list retrieved successfully",
-      data: bookings,
+      data: bookingsWithKundali,
     });
   } catch (error) {
     sendResponse(res, 500, "Failed", {
@@ -95,6 +91,8 @@ bookingController.post("/list", async (req, res) => {
     });
   }
 });
+
+
 bookingController.put("/update/:id", upload.none(), async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -105,6 +103,9 @@ bookingController.put("/update/:id", upload.none(), async (req, res) => {
         message: "Booking not found",
         statusCode: 404,
       });
+    }
+    if (!updatedBooking?.tokenNo) {
+      generateToken({ ...updatedBooking.toObject() });
     }
     sendResponse(res, 200, "Success", {
       success: true,

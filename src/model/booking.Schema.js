@@ -13,7 +13,7 @@ const bookingSchema = mongoose.Schema({
   token:{type:String},
   status: {
     type: String,
-    enum: ["requested", "scheduled", "confirmed", "token_generated"], // Define the allowed values
+    enum: ["requested", "scheduled", "kundaliAdded", "completed"], // Define the allowed values
     default: "requested", // Set a default value if needed
   },
   scheduledDate:{type:String},
