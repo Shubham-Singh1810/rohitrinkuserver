@@ -18,6 +18,7 @@ kundaliController.post("/store", upload.none(), async (req, res) => {
       return sendResponse(res, 404, "Booking not found", {
         success: false,
         message: "No booking found with the provided bookingId.",
+        statusCode:404
       });
     }
 
@@ -43,6 +44,7 @@ kundaliController.post("/store", upload.none(), async (req, res) => {
       success: true,
       message: "Kundali created successfully.",
       data: kundaliData,
+      statusCode:200
     });
   } catch (error) {
     return sendResponse(res, 500, "Failed", {
