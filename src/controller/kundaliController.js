@@ -53,7 +53,23 @@ kundaliController.post("/store", upload.none(), async (req, res) => {
     });
   }
 });
-
+kundaliController.get("/details/:id", upload.none(), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const kundaliDetails = await Kundali.findOne({_id:id  });
+    return sendResponse(res, 200, "Kundali created successfully", {
+      success: true,
+      message: "Kundali details retrived successfully.",
+      data: kundaliDetails,
+      statusCode:200
+    });
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      success: false,
+      message: error.message || "Internal server error.",
+    });
+  }
+});
 
 
 module.exports = kundaliController;
